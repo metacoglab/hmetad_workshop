@@ -11,7 +11,7 @@ author:
 bibliography: citations.bib
 format: 
   revealjs:
-    theme: [default, "ucl.scss"]
+    theme: [default, ucl.scss]
     resources:
       - "fonts/*.otf"
 #    embed-resources: true
@@ -21,9 +21,13 @@ format:
     template-partials:
       - title-slide.html
 # enable tikz figures
-#filters:
-#  - diagram
-
+filters:
+  - tikz
+tikz:
+  cache: false
+  save-tex: true
+  tex-dir: tikz-tex   # any path; defaults to 'tikz-tex'
+  svg-command: "pdf2svg {input} {output}"  # use pdf2svg because inkscape breaks fonts
 # R code execution
 knitr:
   opts_chunk:
@@ -33,12 +37,48 @@ knitr:
 ---
 
 
-```{r setup}
-library(tidyverse)
-library(hmetad)
+# What is metacognition? { .dark }
+
+
+## Type 1 and type 2 decisions
+```{.tikz}
+%%| filename: type1type2
+%%| caption: This is a test.
+%%| additionalPackages: \usepackage{cmbright}
+\include{tikz_header.tex}
+\begin{tikzpicture}
+	\node[image] (stimulus) { \includegraphics[width=1cm]{figures/gabor.png} };
+	\node (type1) [right = of stimulus] {
+		Direction? \\ 
+		L \hspace{.25em} R
+	};
+	\node (type2) [right = of type1] { 
+		Confidence? \\
+		1 \hspace{.1em} 2 \hspace{.1em} 3 \hspace{.1em} 4 
+	};
+	\path (stimulus) edge (type1);
+	\path (type1) edge (type2);
+\end{tikzpicture}
 ```
 
-# What is metacognition? { .dark }
+## Type 1 and type 2 decisions
+
+::::{.fragment}
+```{dot}
+//| fig-align: center
+graph {
+	graph [fontname = "UCLSans" fillcolor = "#361a54"];
+    node [fontname = "UCLSans" style=filled, fillcolor = "#361a54" color = "#361a54" fontcolor = "#fafafa"];
+    edge [fontname = "UCLSans" color = "#361a54"];
+	bgcolor="transparent";
+	A -- B
+}
+```
+::::
+
+
+
+
 
 
 ## Type 1 and type 2 decisions
@@ -74,8 +114,6 @@ Decision about yourself
 @clarke1959
 :::
 
-
-## Type 1 and type 2 decisions
 
 
 
