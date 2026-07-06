@@ -54,6 +54,11 @@ knitr:
 embed-resources: true
 ---
 
+```{r}
+#| include: false
+set.seed(2026)
+```
+
 ## Installation
 
 In order to complete the tutorial, you will need three things:
@@ -90,7 +95,7 @@ Let's also define a helper function to make some plots for us:
 
 ```{r}
 #| cache: false
-source('hmetad_tutorial_utils.R')
+source('https://github.com/kevingoneill/hmetad_workshop/raw/refs/heads/main/hmetad_tutorial_utils.R')
 ```
 
 ## A descriptive perspective on metacognitive sensitivity

@@ -27,7 +27,7 @@ $ucl-light-green: #1aab40;
 $body-bg: $ucl-pale-purple;
 $body-color: $ucl-dark-purple;
 $text-muted: $ucl-pale-purple;
-$link-color: $ucl-heritage-blue;
+$link-color: $ucl-bright-purple;
 $link-color-hover: $ucl-mid-purple;
 $selection-bg: $ucl-heritage-blue;
 $selection-color: $ucl-dark-purple;
@@ -144,7 +144,7 @@ $code-block-bg: $ucl-pale-purple;
 $code-block-border-color: lighten($body-color, 60%);
 $code-block-font-size: 0.55em;
 
-$code-color: $ucl-heritage-blue;
+$code-color: $ucl-bright-purple;
 $code-bg: transparent;
 
 /* -------------------- Tabsets ---------------------- */
@@ -251,14 +251,17 @@ $mermaid-node-fg-color: $ucl-dark-purple;
     bottom: 0;
 }
 
-/*
-// cannot make items appear immediately
-.reveal.fragment.appear {
-    visibility: hidden;
-}
 
-.fragment.appear.visible {
-    visibility: visible;
+/*
+slides section .fragment  { 
+    opacity: 0; 
+    visibility: hidden; 
+    transition: all 0s ease 0s;
+
+    &.visible {
+	opacity: 1;
+	visibility: visible;
+    }
 }
 */
 

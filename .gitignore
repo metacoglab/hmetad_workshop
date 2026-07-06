@@ -51,6 +51,7 @@ rsconnect/
 
 # temporary files
 **/*.*~
+**/#*.*#
 
 # quarto outputs
 slides.html
@@ -62,3 +63,7 @@ hmetad_tutorial_files
 # previous hmetad workshop materials
 _old
 tikz-tex
+
+# quarto renders
+/.quarto/
+/_site/

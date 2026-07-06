@@ -12,6 +12,7 @@ bibliography: citations.bib
 format: 
   ucl-revealjs:
     code-line-numbers: false
+    transition: none
 # enable tikz figures
 filters:
   - tikz
@@ -26,8 +27,12 @@ knitr:
     collapse: true
     dev: svg
     dev.args: { bg: "transparent" }
-#syntax-highlighting: github
-embed-resources: true
+execute:
+  cache: true
+  warning: false
+  message: false
+  error: false
+#embed-resources: true
 ---
 
 ```{r}
@@ -46,17 +51,18 @@ DELTA_COLOR <- paletteer_d("fishualize::Phractocephalus_hemioliopterus")[2]
 
 THEME_SDT <- function(xlab='Evidence', limits=c(-2.5, 2.5), base_size=18,
                       expand=expansion(mult=c(.1, .1))) {
-  list(scale_x_continuous(xlab, limits=limits, breaks=seq(-4, 4, by=2), expand=expand),
-       scale_color_manual('Stimulus', values=PALETTE),
-       scale_fill_manual('Stimulus', values=PALETTE),
-       scale_y_continuous(expand=c(0, 0)),
-       theme_classic(base_size=base_size),
-       theme(axis.title.y=element_blank(),
-             axis.text.y=element_blank(),
-             axis.ticks.y=element_blank(),
-             axis.line.y=element_blank()))
+  list(
+    scale_x_continuous(xlab, limits=limits, breaks=seq(-4, 4, by=2), expand=expand),
+    scale_color_manual('Stimulus', values=PALETTE),
+    scale_fill_manual('Stimulus', values=PALETTE),
+    scale_y_continuous(expand=c(0, 0)),
+    theme_classic(base_size=base_size),
+    theme(axis.title.y=element_blank(),
+      axis.text.y=element_blank(),
+      axis.ticks.y=element_blank(),
+      axis.line.y=element_blank())
+  )
 }
-
 ```
 
 # What is metacognition? { .dark }
@@ -126,12 +132,18 @@ THEME_SDT <- function(xlab='Evidence', limits=c(-2.5, 2.5), base_size=18,
 ::::
 :::
 
-
+:::{.tiny .right .bottom}
+@nelson1990
+:::
 
 ## Hierarchies of metacognition
 
-:::{.fragment}
-![](https://ars.els-cdn.com/content/image/1-s2.0-S0006322321013299-gr3_lrg.jpg){.center-horizontally}
+:::{.fragment }
+![](https://ars.els-cdn.com/content/image/1-s2.0-S0006322321013299-gr3_lrg.jpg){.center-horizontally width=900}
+:::
+
+:::{.tiny .right .bottom}
+@seow2021local
 :::
 
 
@@ -338,9 +350,9 @@ p
 #| fig-width: 8
 #| fig-height: 3
 p <- p + geom_errorbar(aes(x=x, y=y, xmin=x, xmax=xend), inherit.aes=FALSE, width=.05,
-                  data=tibble(x=-evidence$d_prime[1]/2, xend=evidence$d_prime[1]/2, y=.8)) +
+  data=tibble(x=-evidence$d_prime[1]/2, xend=evidence$d_prime[1]/2, y=.8)) +
   geom_text(aes(x=x, y=y, label=label), inherit.aes=FALSE,
-            data=tibble(x=0, y=.925, label="d'"))
+    data=tibble(x=0, y=.925, label="d'"))
 p
 ```
 ::::
@@ -351,7 +363,7 @@ p
 #| fig-height: 3
 p <- p + geom_vline(aes(xintercept=c)) +
   geom_text(aes(x=x, y=y, label=label), inherit.aes=FALSE,
-            data=tibble(x=evidence$c[1]+.15, y=.2, label="c"))
+    data=tibble(x=evidence$c[1]+.15, y=.2, label="c"))
 p
 ```
 ::::
@@ -361,9 +373,9 @@ p
 #| fig-width: 8
 #| fig-height: 3
 p <- p + geom_text(aes(x=x, y=y, label=label), inherit.aes=FALSE,
-                   data=tibble(x=evidence$c[1]-1, y=.2, label="R=0"), color=PALETTE[1]) +
+  data=tibble(x=evidence$c[1]-1, y=.2, label="R=0"), color=PALETTE[1]) +
   geom_text(aes(x=x, y=y, label=label), inherit.aes=FALSE,
-            data=tibble(x=evidence$c[1]+1, y=.2, label="R=1"), color=PALETTE[2])
+    data=tibble(x=evidence$c[1]+1, y=.2, label="R=1"), color=PALETTE[2])
 p
 ```
 ::::
@@ -462,11 +474,11 @@ phi = cor(accuracy, confidence)
 @fleming2014
 :::
 
-## Correlational approaches
+## Should I use correlational measures?
 
 #### Pros
 :::{.incremental .much-smaller}
-- Very smiple, can be used with any design
+- Very simple, can be used with any design
 - Can establish presence (vs. absence) of metacognition
 :::
 
@@ -486,7 +498,7 @@ phi = cor(accuracy, confidence)
 ```{r}
 #| label: auroc2_hist
 #| fig-width: 12
-#: fig-height: 4
+#| fig-height: 5
 d <- sim_metad(10000) |>
   group_by(correct) |>
   count(confidence) |>
@@ -496,35 +508,65 @@ d <- sim_metad(10000) |>
 d.roc2 <- d |>
   pivot_wider(names_from=correct, values_from=n:p) |>
   mutate(p_hit2=1-cumsum(p_1),
-         p_fa2=1-cumsum(p_0)) |>
+    p_fa2=1-cumsum(p_0)) |>
   complete(tibble(confidence=1, p_hit2=1, p_fa2=1))
 
-ROC2_plot <- function(d_conf, d_roc2, k, filter=TRUE) {
+roc2_plot <- function(d, ..., k=NULL, shade=FALSE, point=TRUE) {
+  terms <- names(enquos(..., .named=TRUE))
+  p <- NULL
+
+  if (is.null(k)) {
+    k <- n_distinct(d$confidence) + 1
+  }
+
+  d <- d |> filter(confidence <= k)
+  if (length(terms) == 0) {
+    p <- ggplot(d, aes(x=p_fa2, y=p_hit2))
+  } else {
+    p <- ggplot(d, aes(x=p_fa2, y=p_hit2,
+      color=!!rlang::data_sym(first(terms)),
+      group=interaction(!!!rlang::data_syms(terms))))
+  }
+  
+  p <- p +
+    geom_abline(intercept=0, slope=1, linetype='dotted') +
+    coord_fixed(xlim=c(0, 1), ylim=c(0, 1), expand=FALSE) +
+    scale_x_continuous('P(Confidence ≥ k | Incorrect)', limits=0:1) +
+    scale_y_continuous('P(Confidence ≥ k | Correct)', limits=0:1) +
+    theme_bw(18) +
+    theme(panel.grid=element_blank())
+
+  if (shade) {
+    p <- p + geom_polygon(fill='grey80')
+  }
+  if (point) {
+    p <- p + geom_point()
+  }
+
+  p + geom_path()
+}
+
+ROC2_combo <- function(d_conf, d_roc2, k=NULL, filter=TRUE, shade=FALSE) {
+  if (is.null(k)) {
+    k <- n_distinct(d$confidence) + 1
+  }
+  
+  
   plot.conf <- d_conf |>
     mutate(correct=factor(correct),
-           confidence=factor(confidence)) |>
+      confidence=factor(confidence)) |>
     ggplot(aes(x=confidence, y=p, group=correct, fill=correct)) +
     xlab('Confidence') +
     scale_fill_manual('Correct', values=PALETTE) +
     theme_classic(18, paper=alpha('white', 0)) +
     theme(axis.title.y=element_blank(),
-          axis.text.y=element_blank(),
-          axis.ticks.y=element_blank(),
-          axis.line.y=element_blank())
+      axis.text.y=element_blank(),
+      axis.ticks.y=element_blank(),
+      axis.line.y=element_blank())
 
-  plot.roc2 <- d_roc2 |>
-    filter(confidence <= k) |>
-    ggplot(aes(x=p_fa2, y=p_hit2)) +
-    geom_abline(intercept=0, slope=1, linetype='dotted') +
-    geom_point() +
-    geom_path() +
-    coord_fixed(xlim=c(0, 1), ylim=c(0, 1), expand=FALSE) +
-    scale_x_continuous('P(Confidence ≥ k | Incorrect)', limits=0:1) +
-    scale_y_continuous('P(Confidence ≥ k | Correct)', limits=0:1) +
-    theme_bw(18, paper=alpha('white', 0)) +
-    theme(panel.grid=element_blank(),
-          axis.title.x=element_text(color=PALETTE[1]),
-          axis.title.y=element_text(color=PALETTE[2]))
+  plot.roc2 <- roc2_plot(d_roc2, k=k, shade=shade) +
+    theme(axis.title.x=element_text(color=PALETTE[1]),
+      axis.title.y=element_text(color=PALETTE[2]))
   
   if (filter) {
     plot.conf <- plot.conf +
@@ -533,7 +575,7 @@ ROC2_plot <- function(d_conf, d_roc2, k, filter=TRUE) {
     if (k > 0) {
       plot.conf <- plot.conf +
         geom_col(aes(alpha=as.integer(confidence)>k),
-             position=position_dodge(.925), show.legend=c(alpha=FALSE)) +
+          position=position_dodge(.925), show.legend=c(alpha=FALSE)) +
         scale_alpha_discrete(range=c(0.25, 1), breaks=c(0.25, 1))
     }
   }
@@ -542,11 +584,13 @@ ROC2_plot <- function(d_conf, d_roc2, k, filter=TRUE) {
     plot.conf <- plot.conf +
       geom_col(position=position_dodge(.925))
   }
+
+  
   
   (plot.conf | plot.roc2) + plot_layout(widths=c(2, 1))
 }
 
-ROC2_plot(d, d.roc2, k=0, filter=FALSE)
+ROC2_combo(d, d.roc2, k=0, filter=FALSE)
 ```
 ::::
 
@@ -554,8 +598,8 @@ ROC2_plot(d, d.roc2, k=0, filter=FALSE)
 ```{r}
 #| label: auroc2_0
 #| fig-width: 12
-#: fig-height: 4
-ROC2_plot(d, d.roc2, k=0)
+#| fig-height: 5
+ROC2_combo(d, d.roc2, k=0)
 ```
 ::::
 
@@ -564,8 +608,8 @@ ROC2_plot(d, d.roc2, k=0)
 ```{r}
 #| label: auroc2_1
 #| fig-width: 12
-#: fig-height: 4
-ROC2_plot(d, d.roc2, k=1)
+#| fig-height: 5
+ROC2_combo(d, d.roc2, k=1)
 ```
 ::::
 
@@ -573,8 +617,8 @@ ROC2_plot(d, d.roc2, k=1)
 ```{r}
 #| label: auroc2_2
 #| fig-width: 12
-#: fig-height: 4
-ROC2_plot(d, d.roc2, k=2)
+#| fig-height: 5
+ROC2_combo(d, d.roc2, k=2)
 ```
 ::::
 
@@ -582,8 +626,8 @@ ROC2_plot(d, d.roc2, k=2)
 ```{r}
 #| label: auroc2_3
 #| fig-width: 12
-#: fig-height: 4
-ROC2_plot(d, d.roc2, k=3)
+#| fig-height: 5
+ROC2_combo(d, d.roc2, k=3)
 ```
 ::::
 
@@ -591,26 +635,428 @@ ROC2_plot(d, d.roc2, k=3)
 ```{r}
 #| label: auroc2_4
 #| fig-width: 12
-#: fig-height: 4
-ROC2_plot(d, d.roc2, k=4)
+#| fig-height: 5
+ROC2_combo(d, d.roc2, k=4)
 ```
 ::::
 
+::::{.fragment .fade-in-then-out}
+```{r}
+#| label: auroc2_5
+#| fig-width: 12
+#| fig-height: 5
+ROC2_combo(d, d.roc2, k=4, shade=TRUE)
+```
+::::
 :::
+
+:::{.tiny .right .bottom}
+@clarke1959
+:::
+
+## Issues with AUROC2
+
+```{r}
+#| label: auroc2_dprime
+#| fig-width: 6
+#| fig-height: 5
+expand_grid(
+  dprime=seq(0.5, 2.5, 0.5),
+  meta_c2_1=seq(0, 5, by=.001)[-1],
+  stimulus=0:1,
+  joint_response=seq_len(4)
+) |>
+  mutate(response=type1_response(joint_response, K=2),
+    confidence=type2_response(joint_response, K=2),
+    correct=as.integer(stimulus==response)) |>
+  group_by(dprime, meta_c2_1, stimulus) |>
+  mutate(theta=metad_pmf(stimulus=first(stimulus), dprime=first(dprime), c=0,
+    meta_dprime=first(dprime), meta_c=0,
+    meta_c2_0=-first(meta_c2_1),
+    meta_c2_1=first(meta_c2_1), log=TRUE),
+    theta_1=ifelse(
+      response,
+      normal_lccdf(0, to_signed(stimulus) * first(dprime) / 2),
+      normal_lcdf(0, to_signed(stimulus) * first(dprime) / 2)
+    ),
+    theta_2 = exp(theta - theta_1)) |>
+  group_by(dprime, meta_c2_1, correct, confidence) |>
+  summarize(p=mean(theta_2)) |>
+  group_by(dprime, meta_c2_1) |>
+  pivot_wider(names_from=correct, values_from=p, names_prefix='p_') |>
+  mutate(p_hit2=1-cumsum(p_1),
+    p_fa2=1-cumsum(p_0)) |>
+  filter(confidence==1) |>
+  mutate(dprime=factor(dprime)) |>
+  roc2_plot(dprime, shade=FALSE, point=FALSE) +
+  scale_color_viridis_d()
+```
+
+:::{.fragment .smaller}
+Does not control for type 1 performance!
+:::
+
+## Should I use AUROC2?
+
+#### Pros
+:::{.incremental .much-smaller}
+- Non-parametric, can be used with any design
+- Usually independent of metacognitive bias
+:::
+
+#### Cons {.fragment}
+:::{.incremental .much-smaller}
+- Confounded by type 1 performance
+- Confounded by type 1 response bias
+- Requires controlling for performance (experimentally or statistically)
+:::
+
+
 
 ## meta-$d'$
 
+:::{.r-stack}
+::::{.center-flex}
+```{.tikz width=300}
+%%| filename: stimulus_response1
+%%| additionalPackages: \usepackage{cmbright}
+\include{tikz_header.tex}
+\begin{tikzpicture}
+	\node[ellipse, minimum width=3cm] (stimulus) { Stimulus };
+	\node[ellipse, minimum width=3cm] (response) [above = of stimulus] { Response };
+	\node[ellipse, minimum width=3cm] (confidence) [above = of response] { Confidence };
+	\path[] (stimulus) edge
+	  node[hidden, unboxed, anchor=west, align=left] {\bfseries $\mathbf{d'}$} (response);
+	\path[] (response) edge 
+	  node[hidden, unboxed, anchor=west, align=left] {\bfseries meta-$\mathbf{d'}$} (confidence);
+\end{tikzpicture}
+```
+::::
+
+::::{.fragment .center-flex}
+```{.tikz width=300}
+%%| filename: stimulus_response2
+%%| additionalPackages: \usepackage{cmbright}
+\include{tikz_header.tex}
+\begin{tikzpicture}
+	\node[ellipse, minimum width=3cm] (stimulus) { Stimulus };
+	\node[ellipse, minimum width=3cm] (response) [above = of stimulus] { Response };
+	\node[ellipse, minimum width=3cm] (confidence) [above = of response] { Confidence };
+	\path[] (stimulus) edge
+	  node[unboxed, anchor=west, align=left] {\bfseries $\mathbf{d'}$} (response);
+	\path[] (response) edge 
+	  node[hidden, unboxed, anchor=west, align=left] {\bfseries meta-$\mathbf{d'}$} (confidence);
+\end{tikzpicture}
+```
+::::
+
+::::{.fragment .center-flex}
+```{.tikz width=300}
+%%| filename: stimulus_response3
+%%| additionalPackages: \usepackage{cmbright}
+\include{tikz_header.tex}
+\begin{tikzpicture}
+	\node[ellipse, minimum width=3cm] (stimulus) { Stimulus };
+	\node[ellipse, minimum width=3cm] (response) [above = of stimulus] { Response };
+	\node[ellipse, minimum width=3cm] (confidence) [above = of response] { Confidence };
+	\path[] (stimulus) edge
+	  node[unboxed, anchor=west, align=left] {\bfseries $\mathbf{d'}$} (response);
+	\path[] (response) edge 
+	  node[unboxed, anchor=west, align=left] {\bfseries meta-$\mathbf{d'}$} (confidence);
+\end{tikzpicture}
+```
+::::
+:::
+
+
+## The meta-$d'$ model
+
+:::{.r-stack}
+::::{.fragment}
+```{r}
+#| label: type2_evidence_1
+#| fig-width: 18
+#| fig-height: 6
+p.type1 <- ggplot(evidence, aes(xdist=dist_normal(mu1, sd))) +
+  stat_slab(aes(fill=stimulus), color=NA, alpha=.2, scale=.8, show.legend=FALSE) +
+  geom_vline(aes(xintercept=c)) +
+  THEME_SDT(xlab='Type 1 Evidence', expand=expansion())
+
+((p.type1 /
+    plot_spacer() +
+    plot_layout(heights=c(1, 1.525))) |
+   plot_spacer()) +
+  plot_layout(widths=c(1.57, 1))
+```
+::::
+
+::::{.fragment}
+```{r}
+#| label: type2_evidence_2
+#| fig-width: 18
+#| fig-height: 6
+p.type2.0 <- ggplot(evidence, aes(xdist=dist_truncated(dist_normal(mu2, sd), upper=c))) +
+  stat_slab(aes(fill=stimulus), color=NA, alpha=ALPHA, scale=.8, show.legend=FALSE) +
+  geom_vline(xintercept=first(evidence$c)) +
+  THEME_SDT(xlab='Type 2 Evidence\n("0" Response)', limits=c(-2.5, first(evidence$c)),
+    expand=expansion(add=c(0, 0.01)))
+p.type2.1 <- ggplot(evidence, aes(xdist=dist_truncated(dist_normal(mu2, sd), lower=c))) +
+  stat_slab(aes(fill=stimulus), color=NA, alpha=ALPHA, scale=.8, show.legend=FALSE) +
+  geom_vline(xintercept=first(evidence$c)) +
+  THEME_SDT(xlab='Type 2 Evidence\n("1" Response)', limits=c(first(evidence$c), 2.5),
+    expand=expansion(add=c(.01, 0)))
+
+offset <- (first(evidence$c)+2.5) / 5
+
+((p.type1 /
+    ((p.type2.0 | p.type2.1) +
+       plot_layout(widths=c(offset, 1-offset)))) |
+   plot_spacer()) +
+  plot_layout(widths=c(1.57, 1))
+```
+::::
+
+::::{.fragment}
+```{r}
+#| label: type2_evidence_3
+#| fig-width: 18
+#| fig-height: 6
+p.type2.0 <- p.type2.0 +
+  geom_vline(xintercept=-1, linetype='dashed', color=PALETTE[1])
+p.type2.1 <- p.type2.1 +
+  geom_vline(xintercept=1, linetype='dashed', color=PALETTE[2])
+
+((p.type1 /
+    ((p.type2.0 | p.type2.1) +
+       plot_layout(widths=c(offset, 1-offset)))) |
+   plot_spacer()) +
+  plot_layout(widths=c(1.57, 1))
+```
+::::
+
+::::{.fragment}
+```{r}
+#| label: type2_evidence_4
+#| fig-width: 18
+#| fig-height: 6
+p.roc2 <- expand_grid(
+  meta_c2_1=seq(0, 5, by=.01)[-1],
+  stimulus=0:1,
+  joint_response=seq_len(4)
+) |>
+  mutate(response=type1_response(joint_response, K=2),
+    confidence=type2_response(joint_response, K=2),
+    correct=as.integer(stimulus==response)) |>
+  group_by(meta_c2_1, stimulus) |>
+  mutate(theta=metad_pmf(stimulus=first(stimulus),
+    dprime=first(evidence$d_prime), c=first(evidence$c),
+    meta_dprime=first(evidence$meta_d_prime), meta_c=first(evidence$c),
+    meta_c2_0=first(evidence$c)-first(meta_c2_1),
+    meta_c2_1=first(evidence$c)+first(meta_c2_1), log=TRUE),
+    theta_1=ifelse(
+      response,
+      normal_lccdf(first(evidence$c), to_signed(stimulus) * first(evidence$d_prime) / 2),
+      normal_lcdf(first(evidence$c), to_signed(stimulus) * first(evidence$d_prime) / 2)
+    ),
+    theta_2 = exp(theta - theta_1)) |>
+  group_by(meta_c2_1) |>
+  select(meta_c2_1, response, confidence, correct, theta_2) |>
+  pivot_wider(names_from=correct, values_from=theta_2, names_prefix='p_') |>
+  filter(confidence==2) |>
+  rename(p_hit2=p_1, p_fa2=p_0) |>
+  mutate(response=factor(response)) |>
+  roc2_plot(response, shade=FALSE, point=FALSE) +
+  scale_color_manual('Response', values=PALETTE) +
+  geom_point(data=~ filter(.,
+  (response==0 & meta_c2_1 == 1) |
+    (response==1 & meta_c2_1 == 1)))
+
+((p.type1 /
+    ((p.type2.0 | p.type2.1) +
+       plot_layout(widths=c(offset, 1-offset)))) |
+   p.roc2) +
+  plot_layout(widths=c(2.5, 1))
+```
+::::
+:::
+
+:::{.fragment .much-smaller}
+If we make assumptions about the distribution of evidence,<br>we can *model* the type 2 ROC!
+:::
+
+## Taxonomy of metacognitive measures
+
+:::{.incremental}
+- **Metacognitive sensitivity**: how much information one has about the stimulus when making confidence ratings (i.e., $\textrm{meta-}d'$)
+- **Metacognitive efficiency**: metacognitive capacity, relative to type 1 performance (i.e., $M = \frac{\textrm{meta-}d'}{d'}$)
+- **Metacognitive bias**: overall level of confidence (i.e., $\textrm{meta-}\Delta$, based on $\textrm{meta-}c_2$)
+:::
+
+## Model-fitting approach
+
+**Bayesian inference**
+
+:::{.fragment .much-smaller}
+Determine the model parameters (e.g., $\textrm{meta-}d'$, $\textrm{meta-}c_2$) are most likely given the participant's observed type 1 and type 2 responses
+:::
+
+:::{.fragment}
+$$
+\begin{align*}
+p(\theta \;\vert\; \mathcal{D}) \propto p(\mathcal{D} \;\vert\; \theta) p(\theta)
+\end{align*}
+$$
+:::
+
+[Posterior]{.fragment .much-smaller style="position: absolute; top: 400px; right: 600px;"}
+[Likelihood]{.fragment .much-smaller style="position: absolute; top: 400px; right: 400px;"}
+[Prior]{.fragment .much-smaller style="position: absolute; top: 400px; right: 300px;"}
+
+<br>
+
+:::{.fragment}
+In the `hmetad` package, we approximate this calculation using the probabilistic programming language Stan
+:::
+
+:::{.tiny .right .bottom}
+@fleming2017
+:::
+
+
+## Should I use meta-$d'$/$M$-ratio?
+
+#### Pros
+:::{.incremental .much-smaller}
+- Provides principled metric for metacognitive sensitivity
+- Takes into account both type 1 and type 2 response biases
+- Easy to control for performance (e.g. using $M = \frac{\textrm{meta-}d'}{d'}$)
+- Allows hierarchical modeling of participants/stimuli
+:::
+
+#### Cons {.fragment}
+:::{.incremental .much-smaller}
+- Currently only developed for 2-choice discrimination tasks
+- Equal-variance Gaussian assumptions may not hold for some tasks
+- Claims of invariance to type 1 criterion and type 2 bias have been
+questioned [@rausch2023; @xue2021examining]
+:::
 
 
 
 
+# Over to you! {.dark}
+
+<br>
+
+Open `hmetad_tutorial.html` in your browser and follow along the instructions.
+
+If you can't get it installed/running, let me know! Otherwise, you can look at the pre-generated outputs.
 
 
 
+# Bonus slides
+
+## The meta-$d'$ model
+
+::: {.center-flex style="display: block;"}
+
+::::{ style="display: inline-block;"}
+```{.tikz width=400}
+%%| filename: metad_model
+\include{tikz_header.tex}
+\begin{tikzpicture}[latent/.style={circle, draw, minimum size=1.5cm}]
+	\node[latent] (d) {$d'$};
+	\node[latent, right=of d] (logM) {log-$M$};
+	\node[latent, right=of logM, align=center] (dmetac20) {\scriptsize \textbf{log-}\\ \scriptsize\textbf{dmeta-}$\mathbf{c_{2}^0}$ };
+	\node[latent, right=of dmetac20, align=center] (dmetac21) {\scriptsize \textbf{log-}\\ \scriptsize\textbf{dmeta-}$\mathbf{c_{2}^1}$ };
+	\node[latent, right=of dmetac21] (c) {$c$};
+        
+	\node[latent, below=of logM, xshift=1.5cm] (metad) {$\textrm{meta-}d'$};
+	\node[latent, below=of dmetac20, xshift=1.5cm] (metac) {$\textrm{meta-}c$};
+        
+	\node[latent, below=4cm of dmetac20] (metac20) {$\mathbf{\textbf{meta-}c_{2}^0}$};
+	\node[latent, below=4cm of dmetac21] (metac21) {$\mathbf{\textbf{meta-}c_{2}^1}$};
+
+	\node[latent, below=4cm of metac] (pi) {$\pi_s$};
+	\node[obs, fill=UCL_off_white, draw=none, text=UCL_dark_purple, below=of pi] (y) {$\mathbf{y}_s$};
+        
+	\edge {pi} {y};
+	\edge {metac, metac20, metac21} {pi};
+	\path[->] (d) edge[out=270, in=180] (pi);
+	\path[->] (c) edge[out=270, in=0] (pi);
+	\path[->] (metad) edge[out=270, in=180] (pi);
+	\edge {c} {metac};
+	\edge[dashed] {logM} {metac};
+	\edge {logM, d} {metad};
+	\edge {metac} {metac20, metac21};
+	\edge {dmetac20} {metac20};
+	\edge {dmetac21} {metac21};
+\end{tikzpicture}
+```
+::::
+
+::::{style="font-size: 0.33em; display: inline-block;"}
+$$
+\begin{align*}
+	\mathbf{y}_s &\sim \text{Multinomial}(\pi_s) \\
+	\pi_s &= \textrm{metad_pmf}_s(d', c, \textrm{meta-}d', \textrm{meta-}c, \mathbf{\textbf{meta-}c_{2}^0}, \mathbf{\textbf{meta-}c_{2}^{1}}) \\
+	\textrm{meta-}d' &= \textrm{exp}(\textrm{log-}M) \; d' \\
+		\textrm{meta-}c &= \begin{cases}
+            c & \textrm{\sc fixed} \\
+            \textrm{exp}(\textrm{log-}M)\} \; c & \textrm{\sc relative} \\
+        \end{cases} \\
+	\mathbf{\textbf{meta-}c_{2}^0} &= \textrm{meta-}c - \text{cumulative_sum}(\text{exp}(\mathbf{\textbf{log-dmeta-}c_2^0})) \\
+	\mathbf{\textbf{meta-}c_{2}^1} &= \textrm{meta-}c + \text{cumulative_sum}(\text{exp}(\mathbf{\textbf{log-dmeta-}c_2^1}))
+\end{align*}
+$$
+::::
+:::
 
 
+## Advantages of hierarchical Bayesian modeling
 
+:::{.much-smaller}
+- Point estimates of meta-$d'$ are noisy; frequentist estimates of hit/false alarm rates
+fail to account for uncertainty
+- Optimally combines information about within-participant and between-participant variability
+- Avoids padding (edge-correction) for zero-count cells
+- Straightforward testing of group-level and participant-level hypotheses
+- Can also model stimulus variability (i.e., crossed random effects)
+:::
 
+## Advantages of hierarchical Bayesian modeling
 
+![](https://oup.silverchair-cdn.com/oup/backfile/Content_public/Journal/nc/2017/1/10.1093_nc_nix007/5/nix007f5.jpeg?Expires=1786381562&Signature=U4W68U-cOWTIZfO0tNeHay81sTS4bVHKgIN4laJoZHOBz71uSPdgCkXPam6FW8MmAPY5MpDRhXX8mw-3s18Ds4py33SdbpsnqEy9cVRU53bgG5nkA2hu~1902QQn4kz2~PzIMheecidJ-03s4ycXFgmuXcNU5DjBBmT21E19iJS3wr7yjcmIm1vQaxIIp0uVnnF33y0oEOLafV-kmGTp9Za6zmVhU~94kX2Bt5-lkSTAL7BPdKBfbfxwkg2zB5Qb~Z1srkx8js2KnHNttCmTePraTvhZ5qivYFinin8gmuyOsrs82dsgbuK3i~kwalbAXSGxYc-0B4JQYki9vDNvFw__&Key-Pair-Id=APKAIE5G5CRDK6RD3PGA){.nostretch width=900 .center-horizontally}
+
+:::{.tiny .bottom .right}
+@fleming2017
+:::
+
+## Differences between `hmetad` and the Hmeta-d toolbox
+
+:::{.columns}
+
+::::{.column width="50%"}
+### `hmetad`
+
+:::::{.much-smaller}
+- implemented in [Stan](https://mc-stan.org/)
+- $d'$ and $c$ modeled
+- meta-$c_2$ modeled using ordered transform
+- uses `R` formula syntax for arbitrary model specifications
+:::::
+::::
+
+::::{.column width="50%"}
+### Hmeta-d toolbox
+
+:::::{.much-smaller}
+- implemented in [JAGS](https://mcmc-jags.sourceforge.io/)
+- $d'$ and $c$ point estimates taken as data
+- meta-$c_2$ modeled on identity scale
+- has separate files for common model specifications
+:::::
+::::
+:::
 
 ## References
