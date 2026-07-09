@@ -506,7 +506,7 @@ Let's check the default priors used by our model:
 prior_summary(m)
 ```
 
-This table says that by default, `brms` put a wide $t$-distribution prior on $\log(M)$, and a no priors over the other parameters. This means that, before seeing the data, our model will allow $d'$ to take literally *any* value: `0`, `-1`, `100000`, and `-54321` are all considered equally likely! While all of these values are technically possible, if we actually estimated them in our data we would think that something went seriously wrong with our experiment---either the data was recorded improperly, the task was incredibly easy or difficuly, or the participants had a terrible misunderstanding of what they were supposed to do.
+This table says that by default, `brms` put a wide $t$-distribution prior on $\log(M)$, and no priors over the other parameters. This means that, before seeing the data, our model will allow $d'$ to take literally *any* value: `0`, `-1`, `100000`, and `-54321` are all considered equally likely! While all of these values are technically possible, if we actually estimated them in our data we would think that something went seriously wrong with our experiment---either the data was recorded improperly, the task was incredibly easy or difficuly, or the participants had a terrible misunderstanding of what they were supposed to do.
 
 In Bayesian inference, we want to down-weight the probability of any of these crazy values from showing up. The way we do this is by specifying a prior distribution over each parameter that says which values we should expect in a typical experiment. There are two sources of information to help decide which priors to choose: (a) prior predictive checks and (b) domain knowledge. 
 
