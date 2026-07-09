@@ -65,6 +65,10 @@ THEME_SDT <- function(xlab='Evidence', limits=c(-2.5, 2.5), base_size=18,
 }
 ```
 
+# <https://metacoglab.github.io/hmetad_workshop> { .dark style="font-size: 0.6em" }
+
+![](figures/qr_code.svg){.center-horizontally}
+
 # What is metacognition? { .dark }
 
 
@@ -968,12 +972,11 @@ Helpful reviews [@rausch2023; @rahnev2025comprehensive]
 
 # Over to you! {.dark}
 
-<br>
+Open <https://metacoglab.github.io/hmetad_workshop> in your browser and follow along the instructions.
 
-Open `hmetad_tutorial.html` in your browser and follow along the instructions.
-o
 If you can't get it installed/running, let me know! Otherwise, you can look at the pre-generated outputs.
 
+![](figures/qr_code.svg){.center-horizontally style="width: 300px;"}
 
 
 # Bonus slides
@@ -1024,8 +1027,8 @@ $$
 	\pi_s &= \textrm{metad_pmf}_s(d', c, \textrm{meta-}d', \textrm{meta-}c, \mathbf{\textbf{meta-}c_{2}^0}, \mathbf{\textbf{meta-}c_{2}^{1}}) \\
 	\textrm{meta-}d' &= \textrm{exp}(\textrm{log-}M) \; d' \\
 		\textrm{meta-}c &= \begin{cases}
-            c & \textrm{\sc fixed} \\
-            \textrm{exp}(\textrm{log-}M)\} \; c & \textrm{\sc relative} \\
+            c & \textrm{ABSOLUTE} \\
+            \textrm{exp}(\textrm{log-}M) \; c & \textrm{RELATIVE} \\
         \end{cases} \\
 	\mathbf{\textbf{meta-}c_{2}^0} &= \textrm{meta-}c - \text{cumulative_sum}(\text{exp}(\mathbf{\textbf{log-dmeta-}c_2^0})) \\
 	\mathbf{\textbf{meta-}c_{2}^1} &= \textrm{meta-}c + \text{cumulative_sum}(\text{exp}(\mathbf{\textbf{log-dmeta-}c_2^1}))

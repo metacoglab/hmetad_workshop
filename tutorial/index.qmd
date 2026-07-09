@@ -92,16 +92,16 @@ library(bayestestR)        # for significance testing
 options(mc.cores=parallel::detectCores())   # fit models in parallel
 ```
 
-Let's also define a helper function to make some plots for us:
+Let's also load some helper functions to make plots for us:
 
 ```{r}
 #| cache: false
-source('https://github.com/kevingoneill/hmetad_workshop/raw/refs/heads/main/tutorial/hmetad_tutorial_utils.R')
+source('https://github.com/metacoglab/hmetad_workshop/raw/refs/heads/main/tutorial/hmetad_tutorial_utils.R')
 ```
 
 ## A descriptive perspective on metacognitive sensitivity
 
-One of the best ways to understand a model is to take some parameter values, simulate some data, and then to see how the simulated data changed as a function of different parameters. First, let's simulate a dataset with a default set of parameters (we'll use this as a reference later on):
+One of the best ways to understand a model is to take some parameter values, simulate some data, and then to see how the simulated data changed as a function of different parameters. First, let's simulate a large  dataset with a default set of parameters (we'll use this as a reference later on):
 
 ```{r}
 #| label: data_simulation
@@ -109,7 +109,7 @@ d <- sim_metad(N_trials=10000, dprime=1.5)
 d
 ```
 
-As you can see, this function gives us a dataset with one row for each of 1,000 trials, the `stimulus` that was presented on that trial (`0` or `1`), the simulated type 1 `response` (`0` or `1`), and the simulated `confidence` level (`1`, `2`, `3`, or `4`), along with the parameter values used to simulate the data.
+As you can see, this function gives us a dataset with one row for each of 1,000 trials, the `stimulus` that was presented on that trial (`0` or `1`), the simulated type 1 `response` (`0` or `1`), and the simulated `confidence` level (`1`, `2`, `3`, or `4`), along with the parameter values used to simulate the data.^[Note that the simulated data are sorted by stimulus, response, and confidence. Since we are not modeling effects on confidence over time, this will not matter to us.]
 
 We are often interested in quantifying *metacognitive sensitivity*: the relationship between confidence ratings and objective performance. To see this directly, we can plot the probability of each confidence rating given a correct or incorrect decision:
 
@@ -118,7 +118,7 @@ We are often interested in quantifying *metacognitive sensitivity*: the relation
 plot_confidence(d)
 ```
 
-From here it is easy to see that confidence ratings are generally higher for correct responses compared to incorrect responses. This is an indicator of high metacognitive sensitivity: participants are aware then they are likely to be making a mistake.
+From here it is easy to see that confidence ratings are generally higher for correct responses compared to incorrect responses. This is an indicator of high metacognitive sensitivity: participants are aware of when they are likely to be making a mistake.
 
 Another way to visualize metacognitive performance is to make a type 2 receiver operating characteristic (ROC) curve. This plot shows us, for each possible level of confidence `k`, the probability of making a confidence rating greater than `k` for correct and incorrect decisions. That is, we can slide a line between each confidence level, calculate the proportion of correct and incorrect responses to the right of the line, and then plot the proportions against each other:
 ```{r}
@@ -494,7 +494,7 @@ And the type 2 ROC:
 plot_roc2(d, draws=roc2_draws(m, newdata, bounds=TRUE))
 ```
 
-Similar to before, we can see that our model actually does a pretty good job of capturing the data, even if its predictions are not that precise.
+Similar to before, we can see that our model actually does a reasonable job of capturing the data, even if its predictions are not that precise.
 
 
 
@@ -546,15 +546,17 @@ One strategy is trial and error: just pick a prior that feels right, simulate ou
 ## Exercise: prior predictive checks
 Try adjusting the prior in different ways. 
 For each parameter, change the prior mean and/or the prior standard deviation.
-How does each of these change the prior predictions?
+How does each of these change the prior predictions and posterior retrodictions?
 :::
 :::{.answer}
+When looking at the prior, setting the mean and standard deviation does what you might expect: it simply determines the relative weight we give to each parameter value.
+
 In Bayesian inference, the posterior estimate will always be biased toward the prior mean. For example, if the prior mean is at $M=1$ but the $M$-ratio that makes the data most likely is $M=\frac{1}{2}$, the posterior mean will be somewhere between the two ($M \in [\frac{1}{2}, 1]$).
 
 The prior standard deviation controls how *strong* this bias is. When the prior is wide, the bias is usually so small that the posterior will almost exactly match the most likely value. But when the prior is narrow, the posterior will look just like the prior even with a decently large dataset. Importantly, though, with enough data the posterior will always converge to the most likely value no matter how narrow the prior is.
 :::
 
-A better strategy to start with, however, is to use whatever knowledge we happen to have about metacognition in general or our experiment in particular. For a typical psychological task, we would expect most $M$-ratios and $d'$s to be roughly between `0.5` and `2`, our $c$s to be roughly between `-1` and `1`, and the distances between confidence thresholds to be roughly between `.1` and `5`. So, let'stry again, setting normal priors that have roughly these ranges:
+A better strategy to start with, however, is to use whatever knowledge we happen to have about metacognition in general or our experiment in particular. For a typical psychological task, we would expect most $M$-ratios and $d'$s to be roughly between `0.5` and `2`, our $c$s to be roughly between `-1` and `1`, and the distances between confidence thresholds to be roughly between `.1` and `5`. So, let's try again, setting normal priors that have roughly these ranges:
 
 ```{r}
 #| label: spe_prior2
@@ -609,13 +611,14 @@ Why is this the case?
 
 Is this a good or bad thing?
 
-Try fitting the model again, but this time with really tight priors.
-(e.g., set the prior standard deviations to `0.01`). 
+Try fitting the model again, but this time with really tight priors (e.g., set the prior standard deviations to `0.01`). 
 
 How well does this model fit the data? Why?
 :::
 :::{.answer}
 Our model predictions are further away from the data and have less uncertainty because our new priors have a smaller width than our original flat priors. This sounds like a bad thing, but it is actually good: by forcing our estimates to be consistent with our prior knowledge, we are defending against the possibility that we obtain unexpected estimates simply by chance.
+
+For example, our dataset above has no guesses (i.e., responses with minimal confidence). While we can tell that this participant tends to respond with high confidence, we don't expect their guess rate to *actually* be zero. So, with a small dataset like this, we benefit from constraining how much the data can inform our inferences.
 :::
 
 
@@ -697,8 +700,6 @@ On first glance, this looks really good! The model predictions are very close to
 To get an idea, let's resimulate our data from the same participants with the same ground truth parameter values. 
 ```{r}
 #| label: spe_participant_resimulate
-#| warning: false
-#| error: false
 d2 <- resimulate(d)
 m_spe2 <- update(m_spe, newdata=aggregate_metad(d2, participant))
 ```
