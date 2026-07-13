@@ -13,6 +13,7 @@ format:
   ucl-revealjs:
     code-line-numbers: false
     transition: none
+    pdf-separate-fragments: true
 # enable tikz figures
 filters:
   - tikz
